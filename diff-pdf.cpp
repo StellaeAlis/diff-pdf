@@ -51,6 +51,7 @@ bool g_skip_identical = false;
 bool g_mark_differences = false;
 long g_channel_tolerance = 0;
 long g_per_page_pixel_tolerance = 0;
+bool g_only_new_pages = false;
 bool g_grayscale = false;
 // Resolution to use for rasterization, in DPI
 #define DEFAULT_RESOLUTION 300
@@ -319,15 +320,24 @@ cairo_surface_t *diff_images(int page, cairo_surface_t *s1, cairo_surface_t *s2,
     if ( g_verbose )
         printf("page %d has %ld pixels that differ\n", page, pixel_diff_count);
 
-    // If we specified a tolerance, then return if we have exceeded that for this page
-    if ( g_per_page_pixel_tolerance == 0 ? changes : pixel_diff_count > g_per_page_pixel_tolerance)
-    {
-        return diff;
-    }
-    else
-    {
-        cairo_surface_destroy(diff);
-        return NULL;
+    if (g_only_new_pages) {
+        if (changes && pixel_diff_count == 0) {
+            return diff;
+        } else {
+            cairo_surface_destroy(diff);
+            return NULL;
+        }
+    } else {
+        // If we specified a tolerance, then return if we have exceeded that for this page
+        if ( g_per_page_pixel_tolerance == 0 ? changes : pixel_diff_count > g_per_page_pixel_tolerance)
+        {
+            return diff;
+        }
+        else
+        {
+            cairo_surface_destroy(diff);
+            return NULL;
+        }
     }
 }
 
@@ -915,6 +925,10 @@ int main(int argc, char *argv[])
                   wxCMD_LINE_VAL_NUMBER },
 
         { wxCMD_LINE_OPTION,
+                  NULL, "only-new-pages", "only include pages that don't exist in the original file",
+                  wxCMD_LINE_VAL_NUMBER },
+
+        { wxCMD_LINE_OPTION,
                   NULL, "dpi", "rasterization resolution (default: " wxSTRINGIZE(DEFAULT_RESOLUTION) " dpi)",
                   wxCMD_LINE_VAL_NUMBER },
 
@@ -986,6 +1000,11 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Invalid per-page-pixel-tolerance: %ld. Must be 0 or more\n", g_per_page_pixel_tolerance);
             return 2;
         }
+    }
+
+    if ( parser.Found("only-new-pages") )
+    {
+        g_only_new_pages = true;
     }
 
     if ( parser.Found("channel-tolerance", &g_channel_tolerance) )
