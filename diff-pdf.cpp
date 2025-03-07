@@ -320,7 +320,7 @@ cairo_surface_t *diff_images(int page, cairo_surface_t *s1, cairo_surface_t *s2,
     if ( g_verbose )
         printf("page %d has %ld pixels that differ\n", page, pixel_diff_count);
 
-    if (g_only_new_pages) {
+    if (g_only_new_pages) { 
         if (changes && pixel_diff_count == 0) {
             return diff;
         } else {
